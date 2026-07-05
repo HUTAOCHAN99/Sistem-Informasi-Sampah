@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, LogOut, User, Home, Users, Calendar, Package, BarChart3, FileText } from 'lucide-react';
+import { Menu, X, LogOut, User, Home, Users, Calendar, Package, BarChart3, FileText, MessageSquareWarning } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ const navigation = [
   { name: 'Data RT/RW', href: '/rt-rw', icon: Users },
   { name: 'Jadwal Setor', href: '/jadwal', icon: Calendar },
   { name: 'Data Sampah', href: '/sampah', icon: Package },
+  { name: 'Pengaduan Warga', href: '/pengaduan', icon: MessageSquareWarning },
   { name: 'Statistik', href: '/statistik', icon: BarChart3 },
   { name: 'Laporan', href: '/laporan', icon: FileText },
 ];
@@ -31,7 +32,12 @@ export function Navbar() {
     <>
       {/* Mobile sidebar */}
       <div className="lg:hidden">
-        <div className="fixed inset-0 z-40 flex">
+        <div
+          className={cn(
+            "fixed inset-0 z-40 flex",
+            sidebarOpen ? "pointer-events-auto" : "pointer-events-none"
+          )}
+        >
           <button
             onClick={() => setSidebarOpen(false)}
             className={cn(

@@ -60,6 +60,21 @@ export interface GrafikData {
   value: number;
 }
 
+export interface PengaduanWarga {
+  id: string;
+  kode_tracking: string;
+  nama_pelapor: string;
+  no_hp?: string;
+  rt_rw_id: string;
+  deskripsi: string;
+  foto_url?: string;
+  status: 'baru' | 'diproses' | 'selesai';
+  catatan_petugas?: string;
+  created_at?: string;
+  updated_at?: string;
+  rt_rw?: RT_RW;
+}
+
 export interface Laporan {
   id: string;
   tanggal: string;

@@ -28,5 +28,6 @@ export const config = {
     '/sampah/:path*',
     '/statistik/:path*',
     '/laporan/:path*',
+    '/pengaduan/:path*',
   ],
 };
