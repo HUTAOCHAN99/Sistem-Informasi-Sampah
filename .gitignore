@@ -120,7 +120,6 @@ dist
 
 # Gatsby files
 .cache/
-public
 
 # Storybook build outputs
 out/
@@ -135,4 +134,3 @@ temp/
 
 # Remix
 build/
-public/build/
