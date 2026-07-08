@@ -5,10 +5,16 @@ import { Toaster } from 'react-hot-toast';
 export const metadata: Metadata = {
   title: 'Sistem Informasi Pengelolaan Sampah Desa',
   description: 'Aplikasi pengelolaan sampah desa berbasis web',
+  manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
     apple: "/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Sampah Desa",
   },
 };
 
