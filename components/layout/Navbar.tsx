@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, LogOut, User, Home, Users, Calendar, Package, BarChart3, FileText, MessageSquareWarning } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +18,47 @@ const navigation = [
   { name: 'Statistik', href: '/statistik', icon: BarChart3 },
   { name: 'Laporan', href: '/laporan', icon: FileText },
 ];
+
+function Brand({ light = false }: { light?: boolean }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-center rounded-full bg-white p-1 shadow-sm">
+        <Image src="/icon-512.png" alt="SampahDesa" width={22} height={22} />
+      </div>
+      <h1 className={cn('text-lg font-bold tracking-tight', light ? 'text-[#EAF6EE]' : 'text-primary')}>
+        SampahDesa
+      </h1>
+    </div>
+  );
+}
+
+function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+
+  return (
+    <nav className="space-y-1">
+      {navigation.map((item) => {
+        const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              'flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-colors',
+              active
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-accent hover:text-primary'
+            )}
+          >
+            <item.icon className={cn('h-[18px] w-[18px]', active ? 'text-primary-foreground' : 'text-muted-foreground')} />
+            <span>{item.name}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
 export function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -41,7 +83,7 @@ export function Navbar() {
           <button
             onClick={() => setSidebarOpen(false)}
             className={cn(
-              "fixed inset-0 bg-black/50 transition-opacity",
+              "fixed inset-0 bg-[#0B3D2E]/50 transition-opacity",
               sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
           />
@@ -52,31 +94,21 @@ export function Navbar() {
             )}
           >
             <div className="flex items-center justify-between p-4 border-b">
-              <h1 className="text-xl font-bold text-primary">SampahDesa</h1>
+              <Brand />
               <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <nav className="p-4 space-y-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon className="h-5 w-5 text-gray-500" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
+            <div className="p-4">
+              <NavLinks onNavigate={() => setSidebarOpen(false)} />
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2 w-full rounded-lg hover:bg-gray-100 transition-colors text-red-600"
+                className="mt-1 flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-[18px] w-[18px]" />
                 <span>Logout</span>
               </button>
-            </nav>
+            </div>
           </div>
         </div>
       </div>
@@ -85,32 +117,21 @@ export function Navbar() {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-1 min-h-0 bg-white border-r">
           <div className="flex items-center h-16 px-4 border-b">
-            <h1 className="text-xl font-bold text-primary">SampahDesa</h1>
+            <Brand />
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <nav className="space-y-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <item.icon className="h-5 w-5 text-gray-500" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
-            </nav>
+            <NavLinks />
           </div>
           <div className="p-4 border-t">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">{user?.nama || 'User'}</p>
-                <p className="text-xs text-gray-500">{user?.role || 'Guest'}</p>
+                <p className="text-sm font-medium text-foreground">{user?.nama || 'User'}</p>
+                <p className="text-xs text-muted-foreground">{user?.role || 'Guest'}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-destructive/10 hover:text-destructive">
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -119,10 +140,15 @@ export function Navbar() {
       </div>
 
       {/* Top bar for mobile */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#0B3D2E] border-b border-[#0F4732]">
         <div className="flex items-center justify-between h-16 px-4">
-          <h1 className="text-xl font-bold text-primary">SampahDesa</h1>
-          <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
+          <Brand light />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarOpen(true)}
+            className="text-[#EAF6EE] hover:bg-white/10 hover:text-white"
+          >
             <Menu className="h-6 w-6" />
           </Button>
         </div>

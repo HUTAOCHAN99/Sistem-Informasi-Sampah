@@ -4,35 +4,36 @@
 
 @layer base {
   :root {
+    /* Palette derived from the login screen (#0B3D2E deep green / #EAF6EE mint) */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 162 30% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 162 30% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 162 30% 10%;
 
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 355.7 100% 97.3%;
+    --primary: 162 69% 14%;
+    --primary-foreground: 140 40% 94%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 135 17% 95%;
+    --secondary-foreground: 162 69% 14%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 135 17% 95%;
+    --muted-foreground: 148 11% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 140 40% 94%;
+    --accent-foreground: 162 69% 14%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 142.1 76.2% 36.3%;
+    --border: 142 16% 87%;
+    --input: 142 16% 87%;
+    --ring: 162 69% 14%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 }
 
