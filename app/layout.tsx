@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from 'next';
-import './globals.css';
+import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'Sistem Informasi Pengelolaan Sampah Desa',
   description: 'Aplikasi pengelolaan sampah desa berbasis web',
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
