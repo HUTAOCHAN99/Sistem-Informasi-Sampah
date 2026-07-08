@@ -72,10 +72,6 @@ package-lock.json
 .next/
 out/
 
-# Public assets that are generated
-public/icon-*.png
-public/favicon.ico
-
 # Environment variables
 .env.development
 .env.production
