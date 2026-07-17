@@ -286,7 +286,7 @@ function AuthCard({
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@desa.id"
+                placeholder="masukkan email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -328,13 +328,6 @@ function AuthCard({
             <button type="button" className="font-medium text-[#0B3D2E] hover:underline">
               Forgot Password?
             </button>
-          </div>
-
-          <div className="mt-4 rounded-xl bg-[#F1F5F2] p-3 text-[11px] leading-relaxed text-[#6B8577]">
-            <p className="mb-0.5 font-semibold text-[#0B3D2E]">Demo akun</p>
-            <p>Admin: admin@desa.id / admin123</p>
-            <p>RT: rt@desa.id / rt123</p>
-            <p>Kades: kades@desa.id / kades123</p>
           </div>
 
           <div className={desktop ? 'mt-6' : 'mt-auto pt-6'}>

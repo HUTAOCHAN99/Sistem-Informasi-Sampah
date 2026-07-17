@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RTService } from '@/services/rt.service';
 import { PengaduanService } from '@/services/pengaduan.service';
 import { RT_RW } from '@/types';
-import { ImagePlus, Search, Trash2 } from 'lucide-react';
+import { ImagePlus, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function LaporPage() {
@@ -81,8 +81,8 @@ export default function LaporPage() {
       <Card className="w-full max-w-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-2">
-            <div className="p-3 rounded-full bg-red-50">
-              <Trash2 className="h-6 w-6 text-red-600" />
+            <div className="p-3 rounded-full">
+              <img src="/icon-512.png" alt="Trash icon" className="h-12 w-12 object-contain" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-center text-primary">
