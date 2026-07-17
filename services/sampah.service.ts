@@ -91,6 +91,30 @@ export class SampahService {
     return this.getByDateRange(startDate, endDate);
   }
 
+  static async getDateRange(): Promise<{ minDate: string | null; maxDate: string | null }> {
+    const { data: minData, error: minError } = await supabase
+      .from('sampah')
+      .select('tanggal')
+      .order('tanggal', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: maxData, error: maxError } = await supabase
+      .from('sampah')
+      .select('tanggal')
+      .order('tanggal', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (minError) throw minError;
+    if (maxError) throw maxError;
+
+    return {
+      minDate: minData?.tanggal || null,
+      maxDate: maxData?.tanggal || null,
+    };
+  }
+
   static async getByRT(rtId: string): Promise<Sampah[]> {
     const { data, error } = await supabase
       .from('sampah')

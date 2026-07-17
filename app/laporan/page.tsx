@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SampahService } from '@/services/sampah.service';
 import { formatDate, formatWeight } from '@/lib/utils';
-import { FileText, Download, Printer } from 'lucide-react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function LaporanPage() {
@@ -19,23 +19,71 @@ export default function LaporanPage() {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [rangeLoading, setRangeLoading] = useState(true);
+  const [yearOptions, setYearOptions] = useState<number[]>([]);
+  const [minDate, setMinDate] = useState<string | undefined>(undefined);
+  const [maxDate, setMaxDate] = useState<string | undefined>(undefined);
+
+  // Ambil rentang tanggal (terlama - terbaru) langsung dari data di database
+  useEffect(() => {
+    loadDateRange();
+  }, []);
 
   useEffect(() => {
-    loadData();
-  }, [type, date, month, year]);
+    if (!rangeLoading) {
+      loadData();
+    }
+  }, [type, date, month, year, rangeLoading]);
+
+  const loadDateRange = async () => {
+    try {
+      setRangeLoading(true);
+      const { minDate: minD, maxDate: maxD } = await SampahService.getDateRange();
+
+      const currentYear = new Date().getFullYear();
+      const minYear = minD ? new Date(minD).getFullYear() : currentYear;
+      const maxYear = maxD ? new Date(maxD).getFullYear() : currentYear;
+
+      const years: number[] = [];
+      for (let y = maxYear; y >= minYear; y--) {
+        years.push(y);
+      }
+      setYearOptions(years.length > 0 ? years : [currentYear]);
+      setMinDate(minD || undefined);
+      setMaxDate(maxD || undefined);
+
+      // Default ke tanggal data terbaru bila tersedia
+      if (maxD) {
+        const d = new Date(maxD);
+        setDate(maxD);
+        setMonth((d.getMonth() + 1).toString());
+        setYear((d.getFullYear()).toString());
+      } else {
+        setYear(currentYear.toString());
+      }
+    } catch (error) {
+      toast.error('Gagal memuat rentang tanggal laporan');
+    } finally {
+      setRangeLoading(false);
+    }
+  };
+
+  const getDaysInMonth = (monthNum: number, yearNum: number) => {
+    return new Date(yearNum, monthNum, 0).getDate();
+  };
 
   const loadData = async () => {
     try {
       setLoading(true);
       let result;
-      
+
       if (type === 'harian') {
         result = await SampahService.getByDateRange(date, date);
       } else {
         const monthNum = parseInt(month);
         const yearNum = parseInt(year);
         const startDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
-        const lastDay = new Date(yearNum, monthNum, 0).getDate();
+        const lastDay = getDaysInMonth(monthNum, yearNum);
         const endDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
         result = await SampahService.getByDateRange(startDate, endDate);
       }
@@ -56,12 +104,146 @@ export default function LaporanPage() {
     return data.length;
   };
 
-  const handleExportPDF = () => {
-    toast.success('Fitur export PDF akan segera tersedia');
+  const getPeriodInfo = () => {
+    if (type === 'harian') {
+      return {
+        label: `Laporan Harian - ${formatDate(date)}`,
+        fileSuffix: date,
+      };
+    }
+    const monthName = new Date(2000, parseInt(month) - 1, 1).toLocaleString('id-ID', { month: 'long' });
+    return {
+      label: `Laporan Bulanan - ${monthName} ${year}`,
+      fileSuffix: `${year}-${String(month).padStart(2, '0')}`,
+    };
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportExcel = async () => {
+    if (data.length === 0) {
+      toast.error('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    try {
+      const { label, fileSuffix } = getPeriodInfo();
+      const ExcelJS = (await import('exceljs')).default;
+
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Sistem Informasi Sampah';
+      workbook.created = new Date();
+
+      const sheet = workbook.addWorksheet('Laporan', {
+        pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
+      });
+
+      const headers = ['No', 'Tanggal', 'RT/RW', 'Jenis Sampah', 'Berat (Kg)', 'Petugas'];
+
+      // Judul laporan
+      sheet.mergeCells(1, 1, 1, headers.length);
+      const titleCell = sheet.getCell('A1');
+      titleCell.value = 'LAPORAN PENGELOLAAN SAMPAH';
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      sheet.mergeCells(2, 1, 2, headers.length);
+      const subtitleCell = sheet.getCell('A2');
+      subtitleCell.value = label;
+      subtitleCell.font = { italic: true, size: 11, color: { argb: 'FF555555' } };
+      subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      sheet.addRow([]);
+
+      // Header tabel
+      const headerRow = sheet.addRow(headers);
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF15803D' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' }, left: { style: 'thin' },
+          bottom: { style: 'thin' }, right: { style: 'thin' },
+        };
+      });
+      headerRow.height = 20;
+
+      // Baris data
+      data.forEach((item, idx) => {
+        const row = sheet.addRow([
+          idx + 1,
+          formatDate(item.tanggal),
+          `RT ${item.rt_rw?.rt ?? '-'}`,
+          item.kategori?.nama_kategori ?? '-',
+          item.berat,
+          item.petugas,
+        ]);
+        row.eachCell((cell, colNumber) => {
+          cell.border = {
+            top: { style: 'thin' }, left: { style: 'thin' },
+            bottom: { style: 'thin' }, right: { style: 'thin' },
+          };
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: colNumber === 1 || colNumber === 5 ? 'center' : 'left',
+          };
+          if (colNumber === 5) cell.numFmt = '#,##0.0 "kg"';
+        });
+      });
+
+      // Ringkasan
+      const totalBerat = data.reduce((sum, item) => sum + (Number(item.berat) || 0), 0);
+      const totalTransaksi = data.length;
+      const rataRata = totalTransaksi > 0 ? totalBerat / totalTransaksi : 0;
+
+      sheet.addRow([]);
+      const summaryTitleRow = sheet.addRow(['RINGKASAN']);
+      summaryTitleRow.getCell(1).font = { bold: true, size: 12 };
+
+      const summaryRows = [
+        ['Total Berat', `${totalBerat.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`],
+        ['Jumlah Transaksi', totalTransaksi],
+        ['Rata-rata per Transaksi', `${rataRata.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`],
+      ];
+
+      summaryRows.forEach(([labelText, value]) => {
+        const row = sheet.addRow([labelText, value]);
+        row.getCell(1).font = { bold: true };
+        row.eachCell((cell, colNumber) => {
+          cell.border = {
+            top: { style: 'thin' }, left: { style: 'thin' },
+            bottom: { style: 'thin' }, right: { style: 'thin' },
+          };
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: colNumber === 1 ? 'left' : 'center',
+          };
+        });
+      });
+
+      // Lebar kolom
+      sheet.getColumn(1).width = 6;
+      sheet.getColumn(2).width = 20;
+      sheet.getColumn(3).width = 12;
+      sheet.getColumn(4).width = 22;
+      sheet.getColumn(5).width = 16;
+      sheet.getColumn(6).width = 20;
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Laporan_${type === 'harian' ? 'Harian' : 'Bulanan'}_${fileSuffix}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('Laporan Excel berhasil diunduh');
+    } catch (error) {
+      toast.error('Gagal membuat file Excel');
+    }
   };
 
   return (
@@ -75,19 +257,18 @@ export default function LaporanPage() {
             <p className="text-gray-500">Cetak laporan pengelolaan sampah</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Cetak
-            </Button>
-            <Button onClick={handleExportPDF}>
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
+            <Button onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export Excel
             </Button>
           </div>
         </div>
 
         <Card className="mb-6">
           <CardContent className="p-6">
+            {rangeLoading && (
+              <p className="text-xs text-gray-400 mb-3">Memuat rentang tanggal dari data...</p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Jenis Laporan</Label>
@@ -111,6 +292,8 @@ export default function LaporanPage() {
                   <Input
                     type="date"
                     value={date}
+                    min={minDate}
+                    max={maxDate}
                     onChange={(e) => setDate(e.target.value)}
                   />
                 </div>
@@ -138,7 +321,7 @@ export default function LaporanPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[2023, 2024, 2025].map((y) => (
+                        {yearOptions.map((y) => (
                           <SelectItem key={y} value={y.toString()}>
                             {y}
                           </SelectItem>
