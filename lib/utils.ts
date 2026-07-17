@@ -23,7 +23,8 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatWeight(kg: number): string {
-  return `${kg} kg`;
+  const rounded = Math.round((kg + Number.EPSILON) * 10) / 10;
+  return `${rounded.toLocaleString('id-ID')} kg`;
 }
 
 export function getInitials(name: string): string {
