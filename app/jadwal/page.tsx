@@ -173,16 +173,16 @@ export default function JadwalPage() {
           <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
             <Card>
               <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-semibold">Kalender Jadwal Setor</h2>
                     <p className="text-sm text-gray-500">Klik tanggal untuk melihat rincian jadwal</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2 sm:justify-end">
                     <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="min-w-[140px] text-center font-semibold">
+                    <div className="min-w-[120px] sm:min-w-[140px] text-center text-sm sm:text-base font-semibold">
                       {format(currentMonth, 'MMMM yyyy', { locale: id })}
                     </div>
                     <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
@@ -191,16 +191,17 @@ export default function JadwalPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-500 mb-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[11px] sm:text-sm font-medium text-gray-500 mb-2">
                   {['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((day) => (
-                    <div key={day}>{day}</div>
+                    <div key={day} className="truncate">{day}</div>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                   {calendarDays.map((day) => {
                     const dayKey = format(day, 'yyyy-MM-dd');
-                    const hasSchedule = Boolean(groupedByDate[dayKey]?.length);
+                    const items = groupedByDate[dayKey] || [];
+                    const hasSchedule = items.length > 0;
                     const isSelected = selectedDate === dayKey;
                     const isCurrentMonthDay = isSameMonth(day, currentMonth);
 
@@ -209,32 +210,49 @@ export default function JadwalPage() {
                         key={dayKey}
                         type="button"
                         onClick={() => setSelectedDate(dayKey)}
-                        className={`min-h-[88px] rounded-lg border p-2 text-left transition ${
+                        className={`flex min-h-[56px] sm:min-h-[84px] lg:min-h-[96px] flex-col overflow-hidden rounded-md sm:rounded-lg border p-1 sm:p-2 text-left transition ${
                           isSelected
                             ? 'border-green-500 bg-green-50'
                             : 'border-gray-200 bg-white hover:border-green-300 hover:bg-green-50/50'
                         } ${!isCurrentMonthDay ? 'opacity-50' : ''}`}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`text-sm font-semibold ${isSelected ? 'text-green-700' : 'text-gray-700'}`}>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`text-xs sm:text-sm font-semibold ${isSelected ? 'text-green-700' : 'text-gray-700'}`}>
                             {format(day, 'd')}
                           </span>
                           {hasSchedule && (
-                            <span className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-medium text-white">
-                              {groupedByDate[dayKey].length}
+                            <span className="shrink-0 rounded-full bg-green-600 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium leading-none text-white">
+                              {items.length}
                             </span>
                           )}
                         </div>
-                        <div className="space-y-1">
-                          {groupedByDate[dayKey]?.slice(0, 2).map((item) => (
-                            <p key={item.id} className="truncate text-[11px] text-gray-600">
-                              RT {item.rt_rw?.rt || '-'} / RW {item.rt_rw?.rw || '-'}
-                            </p>
-                          ))}
-                          {groupedByDate[dayKey]?.length > 2 && (
-                            <p className="text-[11px] text-gray-500">+{groupedByDate[dayKey].length - 2} lagi</p>
-                          )}
-                        </div>
+
+                        {/* Layar sempit: cukup titik penanda supaya tidak terpotong */}
+                        {hasSchedule && (
+                          <div className="mt-1 flex flex-wrap gap-0.5 sm:hidden">
+                            {items.slice(0, 4).map((item) => (
+                              <span key={item.id} className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Layar sm ke atas: ringkasan RT, disingkat supaya tetap muat */}
+                        {hasSchedule && (
+                          <div className="mt-1 hidden min-w-0 flex-1 flex-col gap-0.5 sm:flex">
+                            {items.slice(0, 2).map((item) => (
+                              <p
+                                key={item.id}
+                                className="truncate rounded bg-green-100 px-1 py-0.5 text-[10px] leading-tight text-green-800"
+                                title={`RT ${item.rt_rw?.rt || '-'} / RW ${item.rt_rw?.rw || '-'}`}
+                              >
+                                RT {item.rt_rw?.rt || '-'}
+                              </p>
+                            ))}
+                            {items.length > 2 && (
+                              <p className="truncate text-[10px] text-gray-500">+{items.length - 2} lagi</p>
+                            )}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
