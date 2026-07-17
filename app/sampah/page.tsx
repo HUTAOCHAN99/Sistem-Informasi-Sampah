@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSampah } from '@/hooks/useSampah';
 import { formatDate, formatWeight } from '@/lib/utils';
-import { Plus, Search, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Trash2, Eye, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SampahPage() {
@@ -48,7 +48,7 @@ export default function SampahPage() {
     <div className="min-h-screen flex">
       <Navbar />
       
-      <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8">
+      <div className="flex-1 min-w-0 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Data Sampah</h1>
@@ -84,6 +84,7 @@ export default function SampahPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Sampah</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berat</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Petugas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
@@ -95,6 +96,9 @@ export default function SampahPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{item.kategori?.nama_kategori}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatWeight(item.berat)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{item.petugas}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.keterangan || ''}>
+                      {item.keterangan || '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex gap-2">
                         <Button
@@ -103,6 +107,14 @@ export default function SampahPage() {
                           onClick={() => router.push(`/sampah/detail/${item.id}`)}
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-700"
+                          onClick={() => router.push(`/sampah/edit/${item.id}`)}
+                        >
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
