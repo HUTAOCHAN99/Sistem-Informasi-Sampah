@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatistikService } from '@/services/statistik.service';
-import { Statistik, GrafikData } from '@/types';
+import { Statistik } from '@/types';
 import { formatWeight } from '@/lib/utils';
 import {
   BarChart,
@@ -17,68 +17,17 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
 } from 'recharts';
-import { Trash2, CalendarClock, CheckCircle2, XCircle, PackageOpen } from 'lucide-react';
-
-// Palet warna diselaraskan dengan warna brand (hijau tua #0B3D2E) agar terasa satu kesatuan
-const CHART_COLORS = ['#0B3D2E', '#2F9E6E', '#5DBE8A', '#F4B942', '#3B82F6', '#A855F7'];
-
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null;
-  return (
-    <div className="rounded-lg border border-border bg-white px-3 py-2 shadow-md">
-      {label && <p className="mb-0.5 text-xs font-medium text-muted-foreground">{label}</p>}
-      {payload.map((item: any, i: number) => (
-        <p key={i} className="text-sm font-semibold text-foreground">
-          {item.name ? `${item.name}: ` : ''}
-          {formatWeight(item.value)}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-function EmptyChartState({ text }: { text: string }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-      <PackageOpen className="h-9 w-9 opacity-40" />
-      <p className="text-sm">{text}</p>
-    </div>
-  );
-}
-
-function ChartLegend({ data, total }: { data: GrafikData[]; total: number }) {
-  return (
-    <ul className="flex flex-col gap-2.5">
-      {data.map((item, index) => {
-        const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
-        return (
-          <li key={item.name} className="flex items-center gap-2.5 text-sm">
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-            />
-            <span className="flex-1 truncate text-foreground">{item.name}</span>
-            <span className="shrink-0 text-muted-foreground">{percent}%</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function ChartCardSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-      </CardHeader>
-      <CardContent>
-        <div className="h-72 animate-pulse rounded-lg bg-muted" />
-      </CardContent>
-    </Card>
-  );
-}
+import { Trash2, CalendarClock, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  CHART_COLORS,
+  CustomTooltip,
+  EmptyChartState,
+  ChartLegend,
+  ChartCardSkeleton,
+} from '@/components/charts/chart-helpers';
 
 export default function DashboardPage() {
   const [data, setData] = useState<Statistik | null>(null);
@@ -106,6 +55,15 @@ export default function DashboardPage() {
 
   const totalRT = (data?.rt_sudah_setor || 0) + (data?.rt_belum_setor || 0);
   const persenSetor = totalRT > 0 ? Math.round(((data?.rt_sudah_setor || 0) / totalRT) * 100) : 0;
+  const trendLabel = bulanan.length > 1
+    ? (() => {
+        const latest = bulanan[bulanan.length - 1]?.value || 0;
+        const previous = bulanan[bulanan.length - 2]?.value || 0;
+        if (latest > previous) return 'naik';
+        if (latest < previous) return 'turun';
+        return 'stabil';
+      })()
+    : 'tersedia';
 
   const stats = [
     {
@@ -344,6 +302,51 @@ export default function DashboardPage() {
                           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent))' }} />
                           <Bar dataKey="value" name="Berat" fill="#0B3D2E" radius={[6, 6, 0, 0]} maxBarSize={36} />
                         </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/70 lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold">Line Chart Perkembangan Setoran</CardTitle>
+                  <p className="text-xs text-muted-foreground">Tren setoran {trendLabel} dibanding bulan sebelumnya</p>
+                </CardHeader>
+                <CardContent>
+                  {bulanan.every((item) => item.value === 0) ? (
+                    <div className="h-72">
+                      <EmptyChartState text="Belum ada data sampah tahun ini" />
+                    </div>
+                  ) : (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={bulanan} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                            tickLine={false}
+                            axisLine={{ stroke: 'hsl(var(--border))' }}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                            tickLine={false}
+                            axisLine={false}
+                            width={44}
+                            tickFormatter={(value) => formatWeight(value)}
+                          />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            name="Berat"
+                            stroke="#2F9E6E"
+                            strokeWidth={3}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
                       </ResponsiveContainer>
                     </div>
                   )}

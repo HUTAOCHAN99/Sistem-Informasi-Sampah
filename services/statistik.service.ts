@@ -91,6 +91,34 @@ export class StatistikService {
     return Object.entries(grouped || {}).map(([name, value]) => ({ name, value: value as number }));
   }
 
+  static async getAvailableYears(): Promise<number[]> {
+    const { data, error } = await supabase
+      .from('sampah')
+      .select('tanggal');
+
+    if (error) throw error;
+
+    const years = new Set<number>();
+    data?.forEach((item) => {
+      const match = item.tanggal?.match(/^(\d{4})-/);
+      if (match) {
+        years.add(Number(match[1]));
+      }
+    });
+
+    return Array.from(years).sort((a, b) => a - b);
+  }
+
+  static getRangeForPeriod(year: number, month?: number | null): { startDate: string; endDate: string } {
+    if (month) {
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      return { startDate, endDate };
+    }
+    return { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+  }
+
   static async getGrafikBulanan(year: number): Promise<GrafikData[]> {
     const months = [];
     for (let month = 1; month <= 12; month++) {
