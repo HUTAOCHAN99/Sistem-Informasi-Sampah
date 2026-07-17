@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
 
 type Step = 'welcome' | 'auth';
 type Tab = 'login' | 'lapor';
@@ -65,23 +65,32 @@ export default function LoginPage() {
             </div>
             <span className="text-sm font-semibold tracking-wide">SampahDesa</span>
           </div>
-          {step === 'welcome' && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setStep('auth')}
-              className="text-xs font-medium text-[#EAF6EE]/80 underline-offset-4 hover:underline"
-            >
-              Lewati
-            </button>
-          )}
-          {step === 'auth' && (
-            <button
-              onClick={() => setStep('welcome')}
+              onClick={() => router.push('/titik-jemput')}
               className="flex items-center gap-1 text-xs font-medium text-[#EAF6EE]/80 hover:text-[#EAF6EE]"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Kembali
+              <MapPin className="h-3.5 w-3.5" />
+              Titik Jemput
             </button>
-          )}
+            {step === 'welcome' && (
+              <button
+                onClick={() => setStep('auth')}
+                className="text-xs font-medium text-[#EAF6EE]/80 underline-offset-4 hover:underline"
+              >
+                Lewati
+              </button>
+            )}
+            {step === 'auth' && (
+              <button
+                onClick={() => setStep('welcome')}
+                className="flex items-center gap-1 text-xs font-medium text-[#EAF6EE]/80 hover:text-[#EAF6EE]"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Kembali
+              </button>
+            )}
+          </div>
         </div>
 
         {/* headline sits directly on the green field */}
@@ -159,6 +168,13 @@ export default function LoginPage() {
       <div className="hidden min-h-screen w-full lg:flex">
         {/* left branding panel */}
         <div className="relative flex w-1/2 flex-col items-center justify-center overflow-hidden bg-[#0B3D2E] px-12 xl:w-2/5">
+          <button
+            onClick={() => router.push('/titik-jemput')}
+            className="absolute right-6 top-6 z-20 flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-xs font-medium text-[#EAF6EE]/90 hover:bg-white/20 hover:text-[#EAF6EE]"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            Titik Jemput Sampah
+          </button>
           <svg
             className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.14]"
             viewBox="0 0 100 100"

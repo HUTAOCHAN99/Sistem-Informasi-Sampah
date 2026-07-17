@@ -14,6 +14,10 @@ export interface RT_RW {
   jumlah_kk: number;
   ketua_rt: string;
   nomor_hp: string;
+  // Titik jemput sampah
+  latitude?: number | null;
+  longitude?: number | null;
+  alamat_titik?: string | null;
   created_at?: string;
 }
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, LogOut, User, Home, Users, Calendar, Package, BarChart3, FileText, MessageSquareWarning } from 'lucide-react';
+import { Menu, X, LogOut, User, Home, Users, Calendar, Package, BarChart3, FileText, MessageSquareWarning, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Data RT/RW', href: '/rt-rw', icon: Users },
+  { name: 'Titik Jemput', href: '/dashboard/titik-jemput', icon: MapPin, adminOnly: true },
   { name: 'Jadwal Setor', href: '/jadwal', icon: Calendar },
   { name: 'Data Sampah', href: '/sampah', icon: Package },
   { name: 'Pengaduan Warga', href: '/pengaduan', icon: MessageSquareWarning },
@@ -34,10 +35,12 @@ function Brand({ light = false }: { light?: boolean }) {
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const visibleNav = navigation.filter((item) => !item.adminOnly || user?.role === 'admin');
 
   return (
     <nav className="space-y-1">
-      {navigation.map((item) => {
+      {visibleNav.map((item) => {
         const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
         return (
           <Link
