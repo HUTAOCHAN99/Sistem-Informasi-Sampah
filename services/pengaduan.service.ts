@@ -70,6 +70,29 @@ export class PengaduanService {
     return data || [];
   }
 
+  // Dipakai di dashboard RT: hanya menampilkan pengaduan pada RT/RW miliknya
+  static async getByRT(rtRwId: string): Promise<PengaduanWarga[]> {
+    const { data, error } = await supabase
+      .from('pengaduan_warga')
+      .select(`*, rt_rw:rt_rw_id (*)`)
+      .eq('rt_rw_id', rtRwId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  static async getById(id: string): Promise<PengaduanWarga | null> {
+    const { data, error } = await supabase
+      .from('pengaduan_warga')
+      .select(`*, rt_rw:rt_rw_id (*)`)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   // Dipakai di dashboard RT/Admin untuk update status & catatan
   static async updateStatus(
     id: string,

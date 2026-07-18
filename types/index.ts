@@ -4,6 +4,9 @@ export interface User {
   email: string;
   password?: string;
   role: 'admin' | 'rt' | 'kades';
+  // Hanya diisi untuk akun role 'rt': menghubungkan akun ke satu baris RT/RW
+  // spesifik, supaya akun tersebut hanya bisa mengelola data RT/RW miliknya.
+  rt_rw_id?: string | null;
   created_at?: string;
 }
 

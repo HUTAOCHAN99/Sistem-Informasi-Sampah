@@ -10,6 +10,8 @@ import { PengaduanWarga } from '@/types';
 import { formatDate, getStatusColor } from '@/lib/utils';
 import { MessageSquareWarning, Phone, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { getScopedRtRwId, canManageRtRw, AKSES_DITOLAK_MESSAGE } from '@/lib/rt-scope';
 
 const STATUS_LABEL: Record<PengaduanWarga['status'], string> = {
   baru: 'Baru',
@@ -24,6 +26,7 @@ const STATUS_COLOR: Record<PengaduanWarga['status'], 'warning' | 'info' | 'succe
 };
 
 export default function PengaduanPage() {
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<PengaduanWarga[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'semua' | PengaduanWarga['status']>('semua');
@@ -32,13 +35,19 @@ export default function PengaduanPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authLoading) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, user?.rt_rw_id]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const result = await PengaduanService.getAll();
+      const scopedRtRwId = getScopedRtRwId(user);
+      const result = scopedRtRwId
+        ? await PengaduanService.getByRT(scopedRtRwId)
+        : await PengaduanService.getAll();
       setData(result);
     } catch (error) {
       toast.error('Gagal memuat data pengaduan');
@@ -54,6 +63,10 @@ export default function PengaduanPage() {
 
   const handleUpdateStatus = async (status: PengaduanWarga['status']) => {
     if (!selected) return;
+    if (!canManageRtRw(user, selected.rt_rw_id)) {
+      toast.error(AKSES_DITOLAK_MESSAGE);
+      return;
+    }
     setSaving(true);
     try {
       const updated = await PengaduanService.updateStatus(selected.id, status, catatan);

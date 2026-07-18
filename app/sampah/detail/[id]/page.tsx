@@ -9,24 +9,29 @@ import { SampahService } from '@/services/sampah.service';
 import { Sampah } from '@/types';
 import { formatDate, formatWeight } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, ShieldAlert } from 'lucide-react';
 import { useSampah } from '@/hooks/useSampah';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DetailSampahPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
   const { deleteSampah } = useSampah();
+  const { user, loading: authLoading } = useAuth();
+  const isScopedRT = user?.role === 'rt';
 
   const [sampah, setSampah] = useState<Sampah | null>(null);
   const [fetching, setFetching] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [denied, setDenied] = useState(false);
 
   useEffect(() => {
-    if (id) {
+    if (id && !authLoading) {
       loadData();
     }
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, authLoading]);
 
   const loadData = async () => {
     try {
@@ -34,6 +39,10 @@ export default function DetailSampahPage() {
       const result = await SampahService.getById(id);
       if (!result) {
         setNotFound(true);
+        return;
+      }
+      if (isScopedRT && result.rt_rw_id !== user?.rt_rw_id) {
+        setDenied(true);
         return;
       }
       setSampah(result);
@@ -59,12 +68,32 @@ export default function DetailSampahPage() {
     }
   };
 
-  if (fetching) {
+  if (fetching || authLoading) {
     return (
       <div className="min-h-screen flex">
         <Navbar />
         <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (denied) {
+    return (
+      <div className="min-h-screen flex">
+        <Navbar />
+        <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8">
+          <Button variant="ghost" className="mb-4" onClick={() => router.push('/sampah')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kembali
+          </Button>
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8 flex flex-col items-center gap-2 text-center text-gray-500">
+              <ShieldAlert className="h-8 w-8" />
+              <p>Akses ditolak. Data ini bukan milik RT/RW Anda.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

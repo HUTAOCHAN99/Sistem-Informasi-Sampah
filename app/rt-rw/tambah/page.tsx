@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,40 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRT } from '@/hooks/useRT';
+import { useAuth } from '@/hooks/useAuth';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldAlert } from 'lucide-react';
 
 export default function TambahRTPage() {
   const router = useRouter();
   const { createRT } = useRT();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user && user.role === 'rt') {
+      toast.error('Akun RT tidak dapat menambah RT/RW baru');
+      router.push('/rt-rw');
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || (user && user.role === 'rt')) {
+    return (
+      <div className="min-h-screen flex bg-secondary/40">
+        <Navbar />
+        <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8 flex items-center justify-center">
+          {authLoading ? (
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
+              <ShieldAlert className="h-8 w-8" />
+              <p>Akses ditolak.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
   const [formData, setFormData] = useState({
     rt: '',
     rw: '',

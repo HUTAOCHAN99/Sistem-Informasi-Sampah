@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useJadwal } from "@/hooks/useJadwal";
 import { useRT } from "@/hooks/useRT";
+import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
 import { ArrowLeft } from "lucide-react";
 
@@ -46,12 +47,21 @@ export default function TambahJadwalPage() {
   const router = useRouter();
   const { createJadwal } = useJadwal();
   const { data: rtList, loading: loadingRT } = useRT();
+  const { user } = useAuth();
+  const isScopedRT = user?.role === 'rt';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     rt_rw_id: "",
     hari: "",
     tanggal: "",
   });
+
+  useEffect(() => {
+    if (isScopedRT && rtList.length === 1 && !formData.rt_rw_id) {
+      setFormData((prev) => ({ ...prev, rt_rw_id: rtList[0].id }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isScopedRT, rtList]);
 
   const handleDateChange = (value: string) => {
     setFormData((prev) => ({
@@ -111,7 +121,7 @@ export default function TambahJadwalPage() {
                   onValueChange={(value) =>
                     setFormData({ ...formData, rt_rw_id: value })
                   }
-                  disabled={loadingRT}
+                  disabled={loadingRT || isScopedRT}
                 >
                   <SelectTrigger id="rt_rw_id">
                     <SelectValue placeholder="Pilih RT/RW" />

@@ -9,22 +9,26 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSampah } from '@/hooks/useSampah';
+import { useAuth } from '@/hooks/useAuth';
 import { SampahService } from '@/services/sampah.service';
 import { RTService } from '@/services/rt.service';
 import { KategoriService } from '@/services/kategori.service';
 import { RT_RW, KategoriSampah } from '@/types';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldAlert } from 'lucide-react';
 
 export default function EditSampahPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
   const { updateSampah } = useSampah();
+  const { user, loading: authLoading } = useAuth();
+  const isScopedRT = user?.role === 'rt';
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [denied, setDenied] = useState(false);
   const [rtList, setRtList] = useState<RT_RW[]>([]);
   const [kategoriList, setKategoriList] = useState<KategoriSampah[]>([]);
   const [formData, setFormData] = useState({
@@ -37,17 +41,20 @@ export default function EditSampahPage() {
   });
 
   useEffect(() => {
-    if (id) {
+    if (id && !authLoading) {
       loadData();
     }
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, authLoading]);
 
   const loadData = async () => {
     try {
       setFetching(true);
       const [sampah, rtData, kategoriData] = await Promise.all([
         SampahService.getById(id),
-        RTService.getAll(),
+        isScopedRT && user?.rt_rw_id
+          ? RTService.getById(user.rt_rw_id).then((rt) => (rt ? [rt] : []))
+          : RTService.getAll(),
         KategoriService.getAll(),
       ]);
 
@@ -56,6 +63,11 @@ export default function EditSampahPage() {
 
       if (!sampah) {
         setNotFound(true);
+        return;
+      }
+
+      if (isScopedRT && sampah.rt_rw_id !== user?.rt_rw_id) {
+        setDenied(true);
         return;
       }
 
@@ -113,12 +125,32 @@ export default function EditSampahPage() {
     }
   };
 
-  if (fetching) {
+  if (fetching || authLoading) {
     return (
       <div className="min-h-screen flex">
         <Navbar />
         <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (denied) {
+    return (
+      <div className="min-h-screen flex">
+        <Navbar />
+        <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8">
+          <Button variant="ghost" className="mb-4" onClick={() => router.push('/sampah')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kembali
+          </Button>
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8 flex flex-col items-center gap-2 text-center text-gray-500">
+              <ShieldAlert className="h-8 w-8" />
+              <p>Akses ditolak. Data ini bukan milik RT/RW Anda.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -180,6 +212,7 @@ export default function EditSampahPage() {
                 <Select
                   value={formData.rt_rw_id}
                   onValueChange={(value) => handleSelectChange('rt_rw_id', value)}
+                  disabled={isScopedRT}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih RT/RW" />

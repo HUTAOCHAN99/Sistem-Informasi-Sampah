@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSampah } from '@/hooks/useSampah';
+import { useAuth } from '@/hooks/useAuth';
 import { RTService } from '@/services/rt.service';
 import { KategoriService } from '@/services/kategori.service';
 import { RT_RW, KategoriSampah } from '@/types';
@@ -18,6 +19,8 @@ import { ArrowLeft } from 'lucide-react';
 export default function TambahSampahPage() {
   const router = useRouter();
   const { createSampah } = useSampah();
+  const { user } = useAuth();
+  const isScopedRT = user?.role === 'rt';
   const [loading, setLoading] = useState(false);
   const [rtList, setRtList] = useState<RT_RW[]>([]);
   const [kategoriList, setKategoriList] = useState<KategoriSampah[]>([]);
@@ -32,16 +35,24 @@ export default function TambahSampahPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const loadData = async () => {
     try {
+      // Akun RT hanya boleh mencatat sampah untuk RT/RW miliknya sendiri,
+      // jadi daftar pilihan RT/RW dibatasi ke satu baris saja.
       const [rtData, kategoriData] = await Promise.all([
-        RTService.getAll(),
+        isScopedRT && user?.rt_rw_id
+          ? RTService.getById(user.rt_rw_id).then((rt) => (rt ? [rt] : []))
+          : RTService.getAll(),
         KategoriService.getAll(),
       ]);
       setRtList(rtData);
       setKategoriList(kategoriData);
+      if (isScopedRT && rtData.length === 1) {
+        setFormData((prev) => ({ ...prev, rt_rw_id: rtData[0].id }));
+      }
     } catch (error) {
       toast.error('Gagal memuat data');
     }
@@ -120,6 +131,7 @@ export default function TambahSampahPage() {
                 <Select
                   value={formData.rt_rw_id}
                   onValueChange={(value) => handleSelectChange('rt_rw_id', value)}
+                  disabled={isScopedRT}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih RT/RW" />

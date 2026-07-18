@@ -8,19 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRT } from '@/hooks/useRT';
+import { useAuth } from '@/hooks/useAuth';
 import { RTService } from '@/services/rt.service';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldAlert } from 'lucide-react';
 
 export default function EditRTPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
   const { updateRT } = useRT();
+  const { user, loading: authLoading } = useAuth();
+  const isScopedRT = user?.role === 'rt';
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [denied, setDenied] = useState(false);
   const [formData, setFormData] = useState({
     rt: '',
     rw: '',
@@ -30,10 +34,11 @@ export default function EditRTPage() {
   });
 
   useEffect(() => {
-    if (id) {
+    if (id && !authLoading) {
       loadRT();
     }
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, authLoading]);
 
   const loadRT = async () => {
     try {
@@ -41,6 +46,10 @@ export default function EditRTPage() {
       const rt = await RTService.getById(id);
       if (!rt) {
         setNotFound(true);
+        return;
+      }
+      if (isScopedRT && rt.id !== user?.rt_rw_id) {
+        setDenied(true);
         return;
       }
       setFormData({
@@ -88,12 +97,32 @@ export default function EditRTPage() {
     }
   };
 
-  if (fetching) {
+  if (fetching || authLoading) {
     return (
       <div className="min-h-screen flex">
         <Navbar />
         <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (denied) {
+    return (
+      <div className="min-h-screen flex">
+        <Navbar />
+        <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8">
+          <Button variant="ghost" className="mb-4" onClick={() => router.push('/rt-rw')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kembali
+          </Button>
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8 flex flex-col items-center gap-2 text-center text-gray-500">
+              <ShieldAlert className="h-8 w-8" />
+              <p>Akses ditolak. Anda hanya dapat mengedit RT/RW milik Anda sendiri.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -147,6 +176,7 @@ export default function EditRTPage() {
                     placeholder="Contoh: 01"
                     value={formData.rt}
                     onChange={handleChange}
+                    disabled={isScopedRT}
                     required
                   />
                 </div>
@@ -158,6 +188,7 @@ export default function EditRTPage() {
                     placeholder="Contoh: 01"
                     value={formData.rw}
                     onChange={handleChange}
+                    disabled={isScopedRT}
                     required
                   />
                 </div>
