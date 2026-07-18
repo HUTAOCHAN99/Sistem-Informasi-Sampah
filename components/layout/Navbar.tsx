@@ -103,6 +103,17 @@ export function Navbar() {
               </Button>
             </div>
             <div className="p-4">
+              <div className="mb-4 rounded-2xl border border-muted-foreground/10 bg-muted/40 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{user?.nama || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{user?.role || 'Guest'}</p>
+                  </div>
+                </div>
+              </div>
               <NavLinks onNavigate={() => setSidebarOpen(false)} />
               <button
                 onClick={handleLogout}
