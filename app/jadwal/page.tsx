@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, getDay, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 
 type ViewMode = 'list' | 'calendar';
 
-export default function JadwalPage() {
+function JadwalContent() {
   const { data, loading, deleteJadwal, refresh } = useJadwal();
   const [search, setSearch] = useState('');
   const searchParams = useSearchParams();
@@ -306,5 +306,20 @@ export default function JadwalPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function JadwalPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex">
+        <Navbar />
+        <div className="flex-1 lg:ml-64 mt-16 lg:mt-0 p-4 lg:p-8 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    }>
+      <JadwalContent />
+    </Suspense>
   );
 }
