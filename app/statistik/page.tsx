@@ -28,6 +28,8 @@ import {
   ChartCardSkeleton,
 } from '@/components/charts/chart-helpers';
 import { formatWeight } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { getScopedRtRwId } from '@/lib/rt-scope';
 
 const BULAN_OPTIONS = [
   { value: '0', label: 'Semua Bulan' },
@@ -46,6 +48,8 @@ const BULAN_OPTIONS = [
 ];
 
 export default function StatistikPage() {
+  const { user, loading: authLoading } = useAuth();
+  const scopedRtRwId = getScopedRtRwId(user);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(0); // 0 = semua bulan
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -55,9 +59,11 @@ export default function StatistikPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
+
     const loadAvailableYears = async () => {
       try {
-        const years = await StatistikService.getAvailableYears();
+        const years = await StatistikService.getAvailableYears(scopedRtRwId);
         setAvailableYears(years);
 
         if (years.length > 0) {
@@ -70,9 +76,12 @@ export default function StatistikPage() {
     };
 
     loadAvailableYears();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, scopedRtRwId]);
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (availableYears.length === 0 && year) {
       return;
     }
@@ -83,7 +92,8 @@ export default function StatistikPage() {
     }
 
     loadData();
-  }, [year, month, availableYears]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, month, availableYears, authLoading, scopedRtRwId]);
 
   const loadData = async () => {
     try {
@@ -91,9 +101,9 @@ export default function StatistikPage() {
       const { startDate, endDate } = StatistikService.getRangeForPeriod(year, month || null);
 
       const [jenis, rt, bulanan] = await Promise.all([
-        StatistikService.getGrafikPerJenis(startDate, endDate),
-        StatistikService.getGrafikPerRT(startDate, endDate),
-        StatistikService.getGrafikBulanan(year),
+        StatistikService.getGrafikPerJenis(startDate, endDate, scopedRtRwId),
+        StatistikService.getGrafikPerRT(startDate, endDate, scopedRtRwId),
+        StatistikService.getGrafikBulanan(year, scopedRtRwId),
       ]);
 
       setGrafikPerJenis(jenis);

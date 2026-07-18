@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, getDay, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Navbar } from '@/components/layout/Navbar';
@@ -18,10 +18,22 @@ type ViewMode = 'list' | 'calendar';
 export default function JadwalPage() {
   const { data, loading, deleteJadwal, refresh } = useJadwal();
   const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const searchParams = useSearchParams();
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    searchParams.get('view') === 'calendar' ? 'calendar' : 'list'
+  );
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string>('');
   const router = useRouter();
+
+  // Kalau ada yang mengarah ke /jadwal?view=calendar (mis. tombol "Lihat
+  // Jadwal" dari dashboard), langsung buka tampilan kalender.
+  useEffect(() => {
+    if (searchParams.get('view') === 'calendar') {
+      setViewMode('calendar');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const filteredData = data.filter((item) =>
     item.rt_rw?.rt?.toLowerCase().includes(search.toLowerCase()) ||

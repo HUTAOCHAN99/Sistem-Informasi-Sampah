@@ -11,8 +11,12 @@ import { SampahService } from '@/services/sampah.service';
 import { formatDate, formatWeight } from '@/lib/utils';
 import { FileText, FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { getScopedRtRwId } from '@/lib/rt-scope';
 
 export default function LaporanPage() {
+  const { user, loading: authLoading } = useAuth();
+  const scopedRtRwId = getScopedRtRwId(user);
   const [type, setType] = useState<'harian' | 'bulanan'>('harian');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
@@ -26,19 +30,23 @@ export default function LaporanPage() {
 
   // Ambil rentang tanggal (terlama - terbaru) langsung dari data di database
   useEffect(() => {
-    loadDateRange();
-  }, []);
+    if (!authLoading) {
+      loadDateRange();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, scopedRtRwId]);
 
   useEffect(() => {
-    if (!rangeLoading) {
+    if (!rangeLoading && !authLoading) {
       loadData();
     }
-  }, [type, date, month, year, rangeLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, date, month, year, rangeLoading, authLoading, scopedRtRwId]);
 
   const loadDateRange = async () => {
     try {
       setRangeLoading(true);
-      const { minDate: minD, maxDate: maxD } = await SampahService.getDateRange();
+      const { minDate: minD, maxDate: maxD } = await SampahService.getDateRange(scopedRtRwId);
 
       const currentYear = new Date().getFullYear();
       const minYear = minD ? new Date(minD).getFullYear() : currentYear;
@@ -78,14 +86,14 @@ export default function LaporanPage() {
       let result;
 
       if (type === 'harian') {
-        result = await SampahService.getByDateRange(date, date);
+        result = await SampahService.getByDateRange(date, date, scopedRtRwId);
       } else {
         const monthNum = parseInt(month);
         const yearNum = parseInt(year);
         const startDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
         const lastDay = getDaysInMonth(monthNum, yearNum);
         const endDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-        result = await SampahService.getByDateRange(startDate, endDate);
+        result = await SampahService.getByDateRange(startDate, endDate, scopedRtRwId);
       }
       
       setData(result);

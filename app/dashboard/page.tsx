@@ -1,11 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatistikService } from '@/services/statistik.service';
+import { JadwalService } from '@/services/jadwal.service';
 import { Statistik } from '@/types';
 import { formatWeight } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { getScopedRtRwId } from '@/lib/rt-scope';
 import {
   BarChart,
   Bar,
@@ -20,7 +25,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Trash2, CalendarClock, CheckCircle2, XCircle } from 'lucide-react';
+import { Trash2, CalendarClock, CheckCircle2, XCircle, Calendar as CalendarIcon } from 'lucide-react';
 import {
   CHART_COLORS,
   CustomTooltip,
@@ -30,17 +35,29 @@ import {
 } from '@/components/charts/chart-helpers';
 
 export default function DashboardPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<Statistik | null>(null);
+  const [adaJadwalHariIni, setAdaJadwalHariIni] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authLoading) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, user?.rt_rw_id]);
 
   const loadData = async () => {
     try {
-      const result = await StatistikService.getDashboardData();
+      setLoading(true);
+      const scopedRtRwId = getScopedRtRwId(user);
+      const [result, jadwalHariIni] = await Promise.all([
+        StatistikService.getDashboardData(scopedRtRwId),
+        JadwalService.getToday(scopedRtRwId),
+      ]);
       setData(result);
+      setAdaJadwalHariIni(jadwalHariIni.length > 0);
     } catch (error) {
       console.error('Gagal memuat dashboard:', error);
     } finally {
@@ -169,24 +186,41 @@ export default function DashboardPage() {
             </div>
 
             {/* Progress setor RT */}
-            {totalRT > 0 && (
-              <Card className="border-border/70 mb-6">
-                <CardContent className="p-5">
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">Progres Setor RT Hari Ini</span>
-                    <span className="text-muted-foreground">
-                      {data?.rt_sudah_setor || 0} dari {totalRT} RT ({persenSetor}%)
-                    </span>
+            <Card className="border-border/70 mb-6">
+              <CardContent className="p-5">
+                {adaJadwalHariIni ? (
+                  <>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-medium text-foreground">Progres Setor RT Hari Ini</span>
+                      <span className="text-muted-foreground">
+                        {data?.rt_sudah_setor || 0} dari {totalRT} RT ({persenSetor}%)
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${persenSetor}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-foreground">Progres Setor RT Hari Ini</p>
+                      <p className="text-sm text-muted-foreground">Tidak ada jadwal setor hari ini</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/jadwal?view=calendar')}
+                    >
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      Lihat Jadwal
+                    </Button>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${persenSetor}%` }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

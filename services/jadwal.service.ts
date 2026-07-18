@@ -75,15 +75,20 @@ export class JadwalService {
     return data || [];
   }
 
-  static async getToday(): Promise<Jadwal[]> {
+  /**
+   * @param rtRwId Jika diisi, hanya jadwal untuk RT/RW ini yang dikembalikan.
+   */
+  static async getToday(rtRwId?: string): Promise<Jadwal[]> {
     const today = new Date().toISOString().split('T')[0];
-    const { data, error } = await supabase
+    let query = supabase
       .from('jadwal')
       .select(`
         *,
         rt_rw:rt_rw_id (*)
       `)
       .eq('tanggal', today);
+    if (rtRwId) query = query.eq('rt_rw_id', rtRwId);
+    const { data, error } = await query;
 
     if (error) throw error;
     return data || [];
