@@ -1,24 +1,23 @@
-import { supabase } from '@/lib/supabase';
 import { User } from '@/types';
 
 export class AuthService {
   static async login(email: string, password: string): Promise<{ user: User | null; error: any }> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      // Verifikasi email/password dilakukan di server (app/api/auth/login)
+      // menggunakan bcrypt, supaya password hash tidak pernah sampai ke browser.
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (error) throw error;
-      if (!data) return { user: null, error: 'User not found' };
+      const data = await res.json();
 
-      // In production, use proper password hashing
-      if (data.password !== password) {
-        return { user: null, error: 'Invalid password' };
+      if (!res.ok) {
+        return { user: null, error: data.error || 'Login gagal' };
       }
 
-      return { user: data, error: null };
+      return { user: data.user, error: null };
     } catch (error) {
       return { user: null, error };
     }
